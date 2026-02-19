@@ -1,8 +1,10 @@
 import streamlit as st
+import re
 
 st.title("Sector Vital Calculator (Valens Book IV)")
+
 st.write("Enter zodiac position for each planet.")
-st.write("Choose sign, degree (0–29) and minutes (0–59).")
+st.write("⚠ Use format exactly like: 12º43'  (degrees 0–29, minutes 0–59)")
 
 st.markdown("---")
 
@@ -23,20 +25,49 @@ def years_to_ymd(years):
     d = int((remaining - m) * 30)
     return y, m, d
 
+# ----------------------------
 # INPUT
+# ----------------------------
 
 planets = {}
 planet_names = ["Saturn", "Jupiter", "Mars", "Venus", "Mercury", "Sun", "Moon"]
 
 for planet in planet_names:
-    col1, col2, col3 = st.columns(3)
+    col1, col2 = st.columns(2)
+
     with col1:
         sign = st.selectbox(f"{planet} Sign", signs, key=f"{planet}_sign")
+
     with col2:
-        degree = st.number_input(f"{planet} Degree (0-29)", 0, 29, key=f"{planet}_degree")
-    with col3:
-        minutes = st.number_input(f"{planet} Minutes (0-59)", 0, 59, key=f"{planet}_minutes")
+        position_text = st.text_input(
+            f"{planet} Position (format: 12º43')",
+            key=f"{planet}_pos"
+        )
+
+    degree = 0
+    minutes = 0
+
+    if position_text:
+        match = re.fullmatch(r"(\d{1,2})º(\d{1,2})'", position_text.strip())
+
+        if match:
+            degree = int(match.group(1))
+            minutes = int(match.group(2))
+
+            if degree < 0 or degree > 29 or minutes < 0 or minutes > 59:
+                st.error(f"{planet}: Degree must be 0–29 and minutes 0–59.")
+                degree = 0
+                minutes = 0
+        else:
+            st.error(f"{planet}: Invalid format. Use exactly 12º43'")
+            degree = 0
+            minutes = 0
+
     planets[planet] = sign_to_degree(sign, degree, minutes)
+
+# ----------------------------
+# PLANETARY PERIODS
+# ----------------------------
 
 periods = {
     "Saturn": 30,
@@ -54,7 +85,9 @@ def lunar_phase(sun, moon):
         diff = 360 - diff
     return "New Moon" if diff < 90 else "Full Moon"
 
+# ----------------------------
 # CALCULATE
+# ----------------------------
 
 if st.button("Calculate"):
 
@@ -89,23 +122,22 @@ if st.button("Calculate"):
 
     st.session_state.cycle = cycle
 
+# ----------------------------
 # DISPLAY
+# ----------------------------
 
 if "phase" in st.session_state:
 
-    # Lunar Phase (only value red)
     st.markdown(
         f"Lunar Phase: <span style='color:#e74c3c'>{st.session_state.phase}</span>",
         unsafe_allow_html=True
     )
 
-    # Afeta (only planet red)
     st.markdown(
         f"Afeta: <span style='color:#e74c3c'>{st.session_state.afeta}</span>",
         unsafe_allow_html=True
     )
 
-    # Main Period
     y, m, d = years_to_ymd(st.session_state.quarter_period)
     st.markdown(
         f"Main Period Length: "
@@ -207,5 +239,4 @@ if "phase" in st.session_state:
 
 st.markdown("---")
 st.write("Feito por Joana R.")
-
 
