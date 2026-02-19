@@ -282,5 +282,5 @@ if "phase" in st.session_state:
             )
 
 st.markdown("---")
-st.write("Feito por Joana R.")
+st.write("Feito por Joana Revez")
 
