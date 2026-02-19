@@ -2,9 +2,10 @@ import streamlit as st
 import math
 
 st.title("Sector Vital Calculator (Valens Book IV)")
-
 st.write("Enter zodiac positions in degrees (0–360).")
 st.write("Example: 15° Aquarius = 315°")
+
+st.markdown("---")
 
 planets = {
     "Saturn": st.number_input("Saturn (0-360)", 0.0, 360.0),
@@ -33,38 +34,31 @@ def lunar_phase(sun, moon):
     return "New Moon" if diff < 90 else "Full Moon"
 
 if st.button("Calculate"):
+
     phase = lunar_phase(planets["Sun"], planets["Moon"])
-    st.write("Lunar Phase:", phase)
+    st.session_state.phase = phase
 
-    # Order planets zodiacally
     sorted_planets = sorted(planets.items(), key=lambda x: x[1])
-
-    # Determine Afeta
     moon_degree = planets["Moon"]
-    afeta = None
 
+    afeta = None
     for name, degree in sorted_planets:
         if degree > moon_degree:
             afeta = name
             break
-
     if not afeta:
         afeta = sorted_planets[0][0]
 
-    st.write("Afeta:", afeta)
+    st.session_state.afeta = afeta
+    st.session_state.sorted_planets = sorted_planets
 
     quarter_period = periods[afeta] / 4
-    st.write("Main Period Length:", round(quarter_period, 2), "years")
+    st.session_state.quarter_period = quarter_period
 
-    # Build cycle
     cycle = []
     total = 0
 
-    for name, degree in sorted_planets:
-        if name == afeta:
-            start_index = sorted_planets.index((name, degree))
-            break
-
+    start_index = next(i for i, (name, _) in enumerate(sorted_planets) if name == afeta)
     ordered = sorted_planets[start_index:] + sorted_planets[:start_index]
 
     for name, degree in ordered:
@@ -72,16 +66,28 @@ if st.button("Calculate"):
         total += duration
         cycle.append((name, duration, total))
 
+    st.session_state.cycle = cycle
+
+# Display results if already calculated
+if "phase" in st.session_state:
+
+    st.write("Lunar Phase:", st.session_state.phase)
+    st.write("Afeta:", st.session_state.afeta)
+    st.write("Main Period Length:", round(st.session_state.quarter_period, 2), "years")
+
     st.write("Cycle:")
-    for name, duration, cumulative in cycle:
+    for name, duration, cumulative in st.session_state.cycle:
         st.write(name, "-", round(duration,2), "years (cumulative:", round(cumulative,2), ")")
 
     age = st.number_input("Enter age to check active planet", 0.0, 120.0)
-    cycle_length = sum(periods[p]/4 for p in periods)
 
+    cycle_length = sum(periods[p]/4 for p in periods)
     age_mod = age % cycle_length
 
-    for name, duration, cumulative in cycle:
+    for name, duration, cumulative in st.session_state.cycle:
         if age_mod <= cumulative:
             st.write("Active planet at age", age, ":", name)
             break
+
+st.markdown("---")
+st.write("Feito por Joana R.")
