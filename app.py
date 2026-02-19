@@ -63,9 +63,7 @@ if st.button("Calculate"):
 
     st.session_state.afeta = afeta
     st.session_state.sorted_planets = sorted_planets
-
-    quarter_period = periods[afeta] / 4
-    st.session_state.quarter_period = quarter_period
+    st.session_state.quarter_period = periods[afeta] / 4
 
     cycle = []
     total = 0
@@ -79,6 +77,10 @@ if st.button("Calculate"):
         cycle.append((name, duration, total))
 
     st.session_state.cycle = cycle
+
+# ----------------------------
+# DISPLAY RESULTS
+# ----------------------------
 
 if "phase" in st.session_state:
 
@@ -95,10 +97,54 @@ if "phase" in st.session_state:
     cycle_length = sum(periods[p]/4 for p in periods)
     age_mod = age % cycle_length
 
+    active_planet = None
+
     for name, duration, cumulative in st.session_state.cycle:
         if age_mod <= cumulative:
+            active_planet = name
             st.write("Active planet at age", age, ":", name)
             break
 
+    # ----------------------------
+    # SUBPERIODS
+    # ----------------------------
+
+    if active_planet:
+
+        st.markdown("### Subperiods within " + active_planet)
+
+        # Calculate fixed days
+        fixed_days = {}
+        total_days = 0
+
+        for planet, P in periods.items():
+            days = (2 * P) + (P / 2) + (P / 3)
+            fixed_days[planet] = days
+            total_days += days
+
+        main_duration = periods[active_planet] / 4
+
+        sorted_planets = st.session_state.sorted_planets
+        start_index = next(i for i, (name, _) in enumerate(sorted_planets) if name == active_planet)
+        ordered = sorted_planets[start_index:] + sorted_planets[:start_index]
+
+        cumulative_sub = 0
+
+        for name, _ in ordered:
+            proportion = fixed_days[name] / total_days
+            sub_duration_years = main_duration * proportion
+            sub_duration_days = sub_duration_years * 365
+
+            cumulative_sub += sub_duration_years
+
+            st.write(
+                name,
+                "-",
+                round(sub_duration_years, 3), "years |",
+                round(sub_duration_days, 1), "days | cumulative:",
+                round(cumulative_sub, 3)
+            )
+
 st.markdown("---")
 st.write("Feito por Joana R.")
+
