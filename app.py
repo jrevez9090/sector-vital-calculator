@@ -1,21 +1,31 @@
 import streamlit as st
-import math
 
 st.title("Sector Vital Calculator (Valens Book IV)")
-st.write("Enter zodiac positions in degrees (0–360).")
-st.write("Example: 15° Aquarius = 315°")
+st.write("Enter zodiac position for each planet.")
+st.write("Choose sign and degree (0–30).")
 
 st.markdown("---")
 
-planets = {
-    "Saturn": st.number_input("Saturn (0-360)", 0.0, 360.0),
-    "Jupiter": st.number_input("Jupiter (0-360)", 0.0, 360.0),
-    "Mars": st.number_input("Mars (0-360)", 0.0, 360.0),
-    "Venus": st.number_input("Venus (0-360)", 0.0, 360.0),
-    "Mercury": st.number_input("Mercury (0-360)", 0.0, 360.0),
-    "Sun": st.number_input("Sun (0-360)", 0.0, 360.0),
-    "Moon": st.number_input("Moon (0-360)", 0.0, 360.0)
-}
+signs = [
+    "Aries", "Taurus", "Gemini", "Cancer",
+    "Leo", "Virgo", "Libra", "Scorpio",
+    "Sagittarius", "Capricorn", "Aquarius", "Pisces"
+]
+
+def sign_to_degree(sign, degree):
+    return signs.index(sign) * 30 + degree
+
+planets = {}
+
+planet_names = ["Saturn", "Jupiter", "Mars", "Venus", "Mercury", "Sun", "Moon"]
+
+for planet in planet_names:
+    col1, col2 = st.columns(2)
+    with col1:
+        sign = st.selectbox(f"{planet} Sign", signs, key=f"{planet}_sign")
+    with col2:
+        degree = st.number_input(f"{planet} Degree (0-30)", 0.0, 30.0, key=f"{planet}_degree")
+    planets[planet] = sign_to_degree(sign, degree)
 
 periods = {
     "Saturn": 30,
@@ -68,7 +78,6 @@ if st.button("Calculate"):
 
     st.session_state.cycle = cycle
 
-# Display results if already calculated
 if "phase" in st.session_state:
 
     st.write("Lunar Phase:", st.session_state.phase)
@@ -81,13 +90,4 @@ if "phase" in st.session_state:
 
     age = st.number_input("Enter age to check active planet", 0.0, 120.0)
 
-    cycle_length = sum(periods[p]/4 for p in periods)
-    age_mod = age % cycle_length
-
-    for name, duration, cumulative in st.session_state.cycle:
-        if age_mod <= cumulative:
-            st.write("Active planet at age", age, ":", name)
-            break
-
-st.markdown("---")
-st.write("Feito por Joana R.")
+    cycle_length = sum(periods_
