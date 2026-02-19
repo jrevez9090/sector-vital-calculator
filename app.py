@@ -16,6 +16,13 @@ def sign_to_degree(sign, degree, minutes):
     decimal_degree = degree + (minutes / 60)
     return signs.index(sign) * 30 + decimal_degree
 
+def years_to_ymd(years):
+    y = int(years)
+    remaining = (years - y) * 12
+    m = int(remaining)
+    d = int((remaining - m) * 30)
+    return y, m, d
+
 planets = {}
 planet_names = ["Saturn", "Jupiter", "Mars", "Venus", "Mercury", "Sun", "Moon"]
 
@@ -78,9 +85,7 @@ if st.button("Calculate"):
 
     st.session_state.cycle = cycle
 
-# ----------------------------
-# DISPLAY RESULTS
-# ----------------------------
+# DISPLAY
 
 if "phase" in st.session_state:
 
@@ -98,22 +103,21 @@ if "phase" in st.session_state:
     age_mod = age % cycle_length
 
     active_planet = None
+    previous_cumulative = 0
 
     for name, duration, cumulative in st.session_state.cycle:
         if age_mod <= cumulative:
             active_planet = name
+            time_in_main = age_mod - previous_cumulative
             st.write("Active planet at age", age, ":", name)
             break
+        previous_cumulative = cumulative
 
-    # ----------------------------
     # SUBPERIODS
-    # ----------------------------
-
     if active_planet:
 
         st.markdown("### Subperiods within " + active_planet)
 
-        # Calculate fixed days
         fixed_days = {}
         total_days = 0
 
@@ -129,21 +133,29 @@ if "phase" in st.session_state:
         ordered = sorted_planets[start_index:] + sorted_planets[:start_index]
 
         cumulative_sub = 0
+        sub_active = None
+        prev_sub_cumulative = 0
 
         for name, _ in ordered:
             proportion = fixed_days[name] / total_days
-            sub_duration_years = main_duration * proportion
-            sub_duration_days = sub_duration_years * 365
+            sub_duration = main_duration * proportion
+            cumulative_sub += sub_duration
 
-            cumulative_sub += sub_duration_years
+            y, m, d = years_to_ymd(sub_duration)
 
-            st.write(
-                name,
-                "-",
-                round(sub_duration_years, 3), "years |",
-                round(sub_duration_days, 1), "days | cumulative:",
-                round(cumulative_sub, 3)
-            )
+            st.write(f"{name} - {y}y {m}m {d}d (cumulative: {round(cumulative_sub,3)})")
+
+            if sub_active is None and time_in_main <= cumulative_sub:
+                sub_active = name
+                time_inside_sub = time_in_main - prev_sub_cumulative
+
+            prev_sub_cumulative = cumulative_sub
+
+        if sub_active:
+            y2, m2, d2 = years_to_ymd(time_inside_sub)
+            st.markdown("### Active Subperiod:")
+            st.write(sub_active)
+            st.write("Time inside subperiod:", f"{y2}y {m2}m {d2}d")
 
 st.markdown("---")
 st.write("Feito por Joana R.")
