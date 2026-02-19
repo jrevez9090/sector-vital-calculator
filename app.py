@@ -283,4 +283,4 @@ if "phase" in st.session_state:
 
 st.markdown("---")
 st.write("Feito por Joana Revez")
-
+st.write("Qualquer erro por favor contacte: joanarevez@hotmail.com")
