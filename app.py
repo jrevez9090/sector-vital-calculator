@@ -23,9 +23,7 @@ def years_to_ymd(years):
     d = int((remaining - m) * 30)
     return y, m, d
 
-# ----------------------------
 # INPUT
-# ----------------------------
 
 planets = {}
 planet_names = ["Saturn", "Jupiter", "Mars", "Venus", "Mercury", "Sun", "Moon"]
@@ -56,9 +54,7 @@ def lunar_phase(sun, moon):
         diff = 360 - diff
     return "New Moon" if diff < 90 else "Full Moon"
 
-# ----------------------------
-# CALCULATION
-# ----------------------------
+# CALCULATE
 
 if st.button("Calculate"):
 
@@ -93,15 +89,23 @@ if st.button("Calculate"):
 
     st.session_state.cycle = cycle
 
-# ----------------------------
 # DISPLAY
-# ----------------------------
 
 if "phase" in st.session_state:
 
-    st.write("Lunar Phase:", st.session_state.phase)
-    st.write("Afeta:", st.session_state.afeta)
+    # Lunar Phase (only value red)
+    st.markdown(
+        f"Lunar Phase: <span style='color:#e74c3c'>{st.session_state.phase}</span>",
+        unsafe_allow_html=True
+    )
 
+    # Afeta (only planet red)
+    st.markdown(
+        f"Afeta: <span style='color:#e74c3c'>{st.session_state.afeta}</span>",
+        unsafe_allow_html=True
+    )
+
+    # Main Period
     y, m, d = years_to_ymd(st.session_state.quarter_period)
     st.markdown(
         f"Main Period Length: "
@@ -133,17 +137,19 @@ if "phase" in st.session_state:
         if age_mod <= cumulative:
             active_planet = name
             time_in_main = age_mod - previous_cumulative
-            st.write("Active planet at age", age, ":", name)
+            st.markdown(
+                f"Active planet at age {age}: "
+                f"<span style='color:#e74c3c'>{name}</span>",
+                unsafe_allow_html=True
+            )
             break
         previous_cumulative = cumulative
 
-    # ----------------------------
     # SUBPERIODS
-    # ----------------------------
 
     if active_planet:
 
-        st.markdown("### Subperiods within " + active_planet)
+        st.markdown(f"### Subperiods within {active_planet}")
 
         fixed_days = {}
         total_days = 0
@@ -186,8 +192,13 @@ if "phase" in st.session_state:
 
         if sub_active:
             y3, m3, d3 = years_to_ymd(time_inside_sub)
+
             st.markdown("### Active Subperiod:")
-            st.write(sub_active)
+            st.markdown(
+                f"<span style='color:#e74c3c'>{sub_active}</span>",
+                unsafe_allow_html=True
+            )
+
             st.markdown(
                 f"Elapsed inside subperiod: "
                 f"<span style='color:#2ecc71'>{y3}y {m3}m {d3}d</span>",
@@ -196,4 +207,5 @@ if "phase" in st.session_state:
 
 st.markdown("---")
 st.write("Feito por Joana R.")
+
 
