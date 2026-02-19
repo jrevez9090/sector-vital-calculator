@@ -90,4 +90,13 @@ if "phase" in st.session_state:
 
     age = st.number_input("Enter age to check active planet", 0.0, 120.0)
 
-    cycle_length = sum(periods_
+    cycle_length = sum(periods[p]/4 for p in periods)
+    age_mod = age % cycle_length
+
+    for name, duration, cumulative in st.session_state.cycle:
+        if age_mod <= cumulative:
+            st.write("Active planet at age", age, ":", name)
+            break
+
+st.markdown("---")
+st.write("Feito por Joana R.")
