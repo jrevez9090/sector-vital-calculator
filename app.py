@@ -91,11 +91,14 @@ if "phase" in st.session_state:
 
     st.write("Lunar Phase:", st.session_state.phase)
     st.write("Afeta:", st.session_state.afeta)
-    st.write("Main Period Length:", round(st.session_state.quarter_period, 2), "years")
+
+    y, m, d = years_to_ymd(st.session_state.quarter_period)
+    st.write("Main Period Length:", f"{y}y {m}m {d}d")
 
     st.write("Cycle:")
     for name, duration, cumulative in st.session_state.cycle:
-        st.write(name, "-", round(duration,2), "years (cumulative:", round(cumulative,2), ")")
+        y1, m1, d1 = years_to_ymd(duration)
+        st.write(name, "-", f"{y1}y {m1}m {d1}d", "(cumulative:", round(cumulative,3), ")")
 
     age = st.number_input("Enter age to check active planet", 0.0, 120.0)
 
@@ -141,9 +144,9 @@ if "phase" in st.session_state:
             sub_duration = main_duration * proportion
             cumulative_sub += sub_duration
 
-            y, m, d = years_to_ymd(sub_duration)
+            y2, m2, d2 = years_to_ymd(sub_duration)
 
-            st.write(f"{name} - {y}y {m}m {d}d (cumulative: {round(cumulative_sub,3)})")
+            st.write(f"{name} - {y2}y {m2}m {d2}d (cumulative: {round(cumulative_sub,3)})")
 
             if sub_active is None and time_in_main <= cumulative_sub:
                 sub_active = name
@@ -152,10 +155,10 @@ if "phase" in st.session_state:
             prev_sub_cumulative = cumulative_sub
 
         if sub_active:
-            y2, m2, d2 = years_to_ymd(time_inside_sub)
+            y3, m3, d3 = years_to_ymd(time_inside_sub)
             st.markdown("### Active Subperiod:")
             st.write(sub_active)
-            st.write("Time inside subperiod:", f"{y2}y {m2}m {d2}d")
+            st.write("Elapsed inside subperiod:", f"{y3}y {m3}m {d3}d")
 
 st.markdown("---")
 st.write("Feito por Joana R.")
