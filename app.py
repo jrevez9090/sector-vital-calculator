@@ -2,7 +2,7 @@ import streamlit as st
 
 st.title("Sector Vital Calculator (Valens Book IV)")
 st.write("Enter zodiac position for each planet.")
-st.write("Choose sign and degree (0–30).")
+st.write("Choose sign, degree (0–29) and minutes (0–59).")
 
 st.markdown("---")
 
@@ -12,20 +12,22 @@ signs = [
     "Sagittarius", "Capricorn", "Aquarius", "Pisces"
 ]
 
-def sign_to_degree(sign, degree):
-    return signs.index(sign) * 30 + degree
+def sign_to_degree(sign, degree, minutes):
+    decimal_degree = degree + (minutes / 60)
+    return signs.index(sign) * 30 + decimal_degree
 
 planets = {}
-
 planet_names = ["Saturn", "Jupiter", "Mars", "Venus", "Mercury", "Sun", "Moon"]
 
 for planet in planet_names:
-    col1, col2 = st.columns(2)
+    col1, col2, col3 = st.columns(3)
     with col1:
         sign = st.selectbox(f"{planet} Sign", signs, key=f"{planet}_sign")
     with col2:
-        degree = st.number_input(f"{planet} Degree (0-30)", 0.0, 30.0, key=f"{planet}_degree")
-    planets[planet] = sign_to_degree(sign, degree)
+        degree = st.number_input(f"{planet} Degree (0-29)", 0, 29, key=f"{planet}_degree")
+    with col3:
+        minutes = st.number_input(f"{planet} Minutes (0-59)", 0, 59, key=f"{planet}_minutes")
+    planets[planet] = sign_to_degree(sign, degree, minutes)
 
 periods = {
     "Saturn": 30,
