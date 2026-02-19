@@ -1,12 +1,54 @@
 import streamlit as st
 import re
 
+st.set_page_config(page_title="Sector Vital Calculator", layout="centered")
+
 st.title("Sector Vital Calculator (Valens Book IV)")
+
+# ============================
+# CUSTOM STYLING (BORDERS)
+# ============================
+
+st.markdown("""
+<style>
+
+/* Selectbox */
+div[data-baseweb="select"] > div {
+    border: 2px solid #888 !important;
+    border-radius: 6px !important;
+}
+
+/* Text input */
+div[data-baseweb="input"] > div {
+    border: 2px solid #888 !important;
+    border-radius: 6px !important;
+}
+
+/* Number input */
+input[type="number"] {
+    border: 2px solid #888 !important;
+    border-radius: 6px !important;
+}
+
+/* Focus state */
+div[data-baseweb="select"] > div:focus-within,
+div[data-baseweb="input"] > div:focus-within,
+input[type="number"]:focus {
+    border: 2px solid #2ecc71 !important;
+    outline: none !important;
+}
+
+</style>
+""", unsafe_allow_html=True)
 
 st.write("Enter zodiac position for each planet.")
 st.write("⚠ Use format exactly like: 12º43'  (degrees 0–29, minutes 0–59)")
 
 st.markdown("---")
+
+# ============================
+# BASIC STRUCTURE
+# ============================
 
 signs = [
     "Aries", "Taurus", "Gemini", "Cancer",
@@ -25,9 +67,9 @@ def years_to_ymd(years):
     d = int((remaining - m) * 30)
     return y, m, d
 
-# ----------------------------
-# INPUT
-# ----------------------------
+# ============================
+# INPUT SECTION
+# ============================
 
 planets = {}
 planet_names = ["Saturn", "Jupiter", "Mars", "Venus", "Mercury", "Sun", "Moon"]
@@ -65,9 +107,9 @@ for planet in planet_names:
 
     planets[planet] = sign_to_degree(sign, degree, minutes)
 
-# ----------------------------
+# ============================
 # PLANETARY PERIODS
-# ----------------------------
+# ============================
 
 periods = {
     "Saturn": 30,
@@ -85,9 +127,9 @@ def lunar_phase(sun, moon):
         diff = 360 - diff
     return "New Moon" if diff < 90 else "Full Moon"
 
-# ----------------------------
-# CALCULATE
-# ----------------------------
+# ============================
+# CALCULATION
+# ============================
 
 if st.button("Calculate"):
 
@@ -122,9 +164,9 @@ if st.button("Calculate"):
 
     st.session_state.cycle = cycle
 
-# ----------------------------
-# DISPLAY
-# ----------------------------
+# ============================
+# DISPLAY SECTION
+# ============================
 
 if "phase" in st.session_state:
 
@@ -177,7 +219,9 @@ if "phase" in st.session_state:
             break
         previous_cumulative = cumulative
 
+    # ============================
     # SUBPERIODS
+    # ============================
 
     if active_planet:
 
