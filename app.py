@@ -7,7 +7,7 @@ st.set_page_config(page_title="Sector Vital Calculator", layout="centered")
 st.title("Sector Vital Calculator (Valens Book IV)")
 
 # ============================
-# CSS – BORDAS VISUAIS
+# CSS – VISUAL STYLE
 # ============================
 
 st.markdown("""
@@ -25,6 +25,16 @@ input[type="number"]:focus {
     border: 2px solid #e74c3c !important;
     outline: none !important;
 }
+
+.green {
+    color: #2ecc71;
+    font-weight: 500;
+}
+
+.red {
+    color: #e74c3c;
+    font-weight: 600;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -34,7 +44,7 @@ st.write("⚠ Use format exactly like: 12º43'")
 st.markdown("---")
 
 # ============================
-# ESTRUTURA
+# STRUCTURE
 # ============================
 
 signs = [
@@ -54,7 +64,7 @@ def years_to_ymd(years):
     return y, m, d
 
 # ============================
-# LUNAÇÃO
+# PRENATAL LUNATION
 # ============================
 
 st.markdown("### Prenatal Lunation Position")
@@ -80,7 +90,7 @@ if lun_text:
 st.markdown("---")
 
 # ============================
-# PLANETAS
+# PLANETS
 # ============================
 
 planets = {}
@@ -107,7 +117,7 @@ for planet in planet_names:
     planets[planet] = sign_to_degree(sign, degree, minutes)
 
 # ============================
-# PERÍODOS
+# PERIODS
 # ============================
 
 periods = {
@@ -121,7 +131,7 @@ periods = {
 }
 
 # ============================
-# CÁLCULO
+# CALCULATION
 # ============================
 
 if st.button("Calculate") and lun_degree is not None:
@@ -157,16 +167,23 @@ if st.button("Calculate") and lun_degree is not None:
 
 if "base_cycle" in st.session_state:
 
-    cycle_length = st.session_state.base_cycle[-1][2]  # 32.25
+    st.markdown(f"### Initial Afeta: <span class='red'>{st.session_state.afeta}</span>", unsafe_allow_html=True)
 
-    # ---------- MOSTRAR 3 CICLOS ----------
-    st.markdown("## 1º CICLO")
+    cycle_length = st.session_state.base_cycle[-1][2]
+
+    # ---------- 1st CYCLE ----------
+    st.markdown("## 1st Cycle")
     cycle1 = st.session_state.base_cycle
     for name,duration,cum in cycle1:
         y,m,d = years_to_ymd(duration)
-        st.write(f"{name} - {y}y {m}m {d}d (cumulative: {round(cum,3)})")
+        st.markdown(
+            f"{name} - <span class='green'>{y}y {m}m {d}d</span> "
+            f"(cumulative: <span class='green'>{round(cum,3)}</span>)",
+            unsafe_allow_html=True
+        )
 
-    st.markdown("## 2º CICLO")
+    # ---------- 2nd CYCLE ----------
+    st.markdown("## 2nd Cycle")
     cycle2 = cycle1[1:] + cycle1[:1]
     cumulative = 0
     cycle2_display = []
@@ -174,9 +191,14 @@ if "base_cycle" in st.session_state:
         cumulative += duration
         cycle2_display.append((name,duration,cumulative))
         y,m,d = years_to_ymd(duration)
-        st.write(f"{name} - {y}y {m}m {d}d (cumulative: {round(cumulative,3)})")
+        st.markdown(
+            f"{name} - <span class='green'>{y}y {m}m {d}d</span> "
+            f"(cumulative: <span class='green'>{round(cumulative,3)}</span>)",
+            unsafe_allow_html=True
+        )
 
-    st.markdown("## 3º CICLO")
+    # ---------- 3rd CYCLE ----------
+    st.markdown("## 3rd Cycle")
     cycle3 = cycle2[1:] + cycle2[:1]
     cumulative = 0
     cycle3_display = []
@@ -184,9 +206,13 @@ if "base_cycle" in st.session_state:
         cumulative += duration
         cycle3_display.append((name,duration,cumulative))
         y,m,d = years_to_ymd(duration)
-        st.write(f"{name} - {y}y {m}m {d}d (cumulative: {round(cumulative,3)})")
+        st.markdown(
+            f"{name} - <span class='green'>{y}y {m}m {d}d</span> "
+            f"(cumulative: <span class='green'>{round(cumulative,3)}</span>)",
+            unsafe_allow_html=True
+        )
 
-    # ---------- PLANETA ATIVO ----------
+    # ---------- ACTIVE CALCULATION ----------
     age = st.number_input("Enter age to check active planet",0.0,120.0)
 
     completed_cycles = int(age // cycle_length)
@@ -202,8 +228,8 @@ if "base_cycle" in st.session_state:
         active_cycle = cycle3_display
         cycle_number = 3
 
-    st.markdown(f"### Ciclo Atual: {cycle_number}º")
-    st.markdown(f"Afeta ativo do ciclo: **{active_cycle[0][0]}**")
+    st.markdown(f"### Active Cycle: {cycle_number}º")
+    st.markdown(f"Active Cycle Afeta: <span class='red'>{active_cycle[0][0]}</span>", unsafe_allow_html=True)
 
     active_planet = None
     prev_cum = 0
@@ -215,9 +241,9 @@ if "base_cycle" in st.session_state:
             break
         prev_cum = cum
 
-    st.markdown(f"### Planeta ativo: **{active_planet}**")
+    st.markdown(f"Active Planet: <span class='red'>{active_planet}</span>", unsafe_allow_html=True)
 
-    # ---------- SUBPERÍODOS ----------
+    # ---------- SUBPERIODS ----------
     fixed_days = {}
     total_days = 0
 
@@ -235,7 +261,7 @@ if "base_cycle" in st.session_state:
     sub_active = None
     prev_sub = 0
 
-    st.markdown("### Subperíodos")
+    st.markdown("### Subperiods")
 
     for name,_,_ in sub_order:
         proportion = fixed_days[name]/total_days
@@ -243,7 +269,12 @@ if "base_cycle" in st.session_state:
         cumulative_sub += sub_duration
 
         y2,m2,d2 = years_to_ymd(sub_duration)
-        st.write(f"{name} - {y2}y {m2}m {d2}d (cumulative: {round(cumulative_sub,3)})")
+
+        st.markdown(
+            f"{name} - <span class='green'>{y2}y {m2}m {d2}d</span> "
+            f"(cumulative: <span class='green'>{round(cumulative_sub,3)}</span>)",
+            unsafe_allow_html=True
+        )
 
         if sub_active is None and time_in_main <= cumulative_sub:
             sub_active = name
@@ -253,9 +284,13 @@ if "base_cycle" in st.session_state:
 
     if sub_active:
         y3,m3,d3 = years_to_ymd(time_inside_sub)
-        st.markdown(f"### Subperíodo ativo: **{sub_active}**")
-        st.write(f"Elapsed inside subperiod: {y3}y {m3}m {d3}d")
+        st.markdown(f"### Active Subperiod: <span class='red'>{sub_active}</span>", unsafe_allow_html=True)
+        st.markdown(
+            f"Elapsed inside subperiod: "
+            f"<span class='green'>{y3}y {m3}m {d3}d</span>",
+            unsafe_allow_html=True
+        )
 
 st.markdown("---")
-st.write("Feito por Joana Revez")
+st.write("Made by Joana Revez")
 st.write("Se for encontrado algum erro, reporte para joanarevez@hotmail.com")
