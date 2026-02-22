@@ -1,13 +1,12 @@
 import streamlit as st
 import re
-import math
 
 st.set_page_config(page_title="Sector Vital Calculator", layout="centered")
 
 st.title("Sector Vital Calculator (Valens Book IV)")
 
 # ============================
-# CSS – VISUAL STYLE
+# CSS STYLE
 # ============================
 
 st.markdown("""
@@ -169,11 +168,11 @@ if "base_cycle" in st.session_state:
 
     st.markdown(f"### Initial Afeta: <span class='red'>{st.session_state.afeta}</span>", unsafe_allow_html=True)
 
-    cycle_length = st.session_state.base_cycle[-1][2]
-
-            # ---------- 1st CYCLE ----------
-    st.markdown("## 1st Cycle")
     cycle1 = st.session_state.base_cycle
+    cycle_length = cycle1[-1][2]
+
+    # ---------- 1ST CYCLE ----------
+    st.markdown("## 1st Cycle")
     for name,duration,cum in cycle1:
         y,m,d = years_to_ymd(duration)
         st.markdown(
@@ -182,39 +181,35 @@ if "base_cycle" in st.session_state:
             unsafe_allow_html=True
         )
 
-    # ---------- 2nd CYCLE ----------
+    # ---------- 2ND CYCLE ----------
     st.markdown("## 2nd Cycle")
     cycle2 = cycle1[1:] + cycle1[:1]
     cumulative = 0
-    cycle2_display = []
-    offset2 = cycle_length
-
+    cycle2_internal = []
     for name,duration,_ in cycle2:
         cumulative += duration
-        absolute_cum = offset2 + cumulative
-        cycle2_display.append((name,duration,cumulative))  # interno!
+        cycle2_internal.append((name,duration,cumulative))
+        absolute = cycle_length + cumulative
         y,m,d = years_to_ymd(duration)
         st.markdown(
             f"{name} - <span class='green'>{y}y {m}m {d}d</span> "
-            f"(cumulative: <span class='green'>{round(absolute_cum,3)}</span>)",
+            f"(cumulative: <span class='green'>{round(absolute,3)}</span>)",
             unsafe_allow_html=True
         )
 
-    # ---------- 3rd CYCLE ----------
+    # ---------- 3RD CYCLE ----------
     st.markdown("## 3rd Cycle")
     cycle3 = cycle2[1:] + cycle2[:1]
     cumulative = 0
-    cycle3_display = []
-    offset3 = cycle_length * 2
-
+    cycle3_internal = []
     for name,duration,_ in cycle3:
         cumulative += duration
-        absolute_cum = offset3 + cumulative
-        cycle3_display.append((name,duration,cumulative))  # interno!
+        cycle3_internal.append((name,duration,cumulative))
+        absolute = (cycle_length * 2) + cumulative
         y,m,d = years_to_ymd(duration)
         st.markdown(
             f"{name} - <span class='green'>{y}y {m}m {d}d</span> "
-            f"(cumulative: <span class='green'>{round(absolute_cum,3)}</span>)",
+            f"(cumulative: <span class='green'>{round(absolute,3)}</span>)",
             unsafe_allow_html=True
         )
 
@@ -228,24 +223,24 @@ if "base_cycle" in st.session_state:
         active_cycle = cycle1
         cycle_number = 1
     elif completed_cycles == 1:
-        active_cycle = cycle2_display
+        active_cycle = cycle2_internal
         cycle_number = 2
     else:
-        active_cycle = cycle3_display
+        active_cycle = cycle3_internal
         cycle_number = 3
 
-    st.markdown(f"### Active Cycle: {cycle_number}º")
+    st.markdown(f"### Active Cycle: {cycle_number}")
     st.markdown(f"Active Cycle Afeta: <span class='red'>{active_cycle[0][0]}</span>", unsafe_allow_html=True)
 
+    prev = 0
     active_planet = None
-    prev_cum = 0
 
     for name,duration,cum in active_cycle:
         if age_mod <= cum:
             active_planet = name
-            time_in_main = age_mod - prev_cum
+            time_in_main = age_mod - prev
             break
-        prev_cum = cum
+        prev = cum
 
     st.markdown(f"Active Planet: <span class='red'>{active_planet}</span>", unsafe_allow_html=True)
 
@@ -264,8 +259,8 @@ if "base_cycle" in st.session_state:
     sub_order = active_cycle[start:] + active_cycle[:start]
 
     cumulative_sub = 0
-    sub_active = None
     prev_sub = 0
+    sub_active = None
 
     st.markdown("### Subperiods")
 
