@@ -5,43 +5,7 @@ st.set_page_config(page_title="Sector Vital Calculator", layout="centered")
 
 st.title("Sector Vital Calculator (Valens Book IV)")
 
-# ============================
-# CUSTOM STYLING (BORDERS)
-# ============================
-
-st.markdown("""
-<style>
-
-/* Selectbox */
-div[data-baseweb="select"] > div {
-    border: 2px solid #888 !important;
-    border-radius: 6px !important;
-}
-
-/* Text input */
-div[data-baseweb="input"] > div {
-    border: 2px solid #888 !important;
-    border-radius: 6px !important;
-}
-
-/* Number input */
-input[type="number"] {
-    border: 2px solid #888 !important;
-    border-radius: 6px !important;
-}
-
-/* Focus state */
-div[data-baseweb="select"] > div:focus-within,
-div[data-baseweb="input"] > div:focus-within,
-input[type="number"]:focus {
-    border: 2px solid #2ecc71 !important;
-    outline: none !important;
-}
-
-</style>
-""", unsafe_allow_html=True)
-
-st.write("Enter zodiac position for each planet.")
+st.write("Enter prenatal lunation position and zodiac position for each planet.")
 st.write("⚠ Use format exactly like: 12º43'  (degrees 0–29, minutes 0–59)")
 
 st.markdown("---")
@@ -68,7 +32,40 @@ def years_to_ymd(years):
     return y, m, d
 
 # ============================
-# INPUT SECTION
+# PRENATAL LUNATION INPUT
+# ============================
+
+st.markdown("### Prenatal Lunation Position")
+
+col1, col2 = st.columns(2)
+
+with col1:
+    lun_sign = st.selectbox("Lunation Sign", signs)
+
+with col2:
+    lun_text = st.text_input("Lunation Position (format: 12º43')")
+
+lun_degree = None
+lun_deg = 0
+lun_min = 0
+
+if lun_text:
+    match = re.fullmatch(r"(\d{1,2})º(\d{1,2})'", lun_text.strip())
+    if match:
+        lun_deg = int(match.group(1))
+        lun_min = int(match.group(2))
+
+        if 0 <= lun_deg <= 29 and 0 <= lun_min <= 59:
+            lun_degree = sign_to_degree(lun_sign, lun_deg, lun_min)
+        else:
+            st.error("Lunation: Degree must be 0–29 and minutes 0–59.")
+    else:
+        st.error("Lunation: Invalid format. Use exactly 12º43'")
+
+st.markdown("---")
+
+# ============================
+# PLANET INPUT
 # ============================
 
 planets = {}
@@ -121,29 +118,22 @@ periods = {
     "Moon": 25
 }
 
-def lunar_phase(sun, moon):
-    diff = abs(sun - moon)
-    if diff > 180:
-        diff = 360 - diff
-    return "New Moon" if diff < 90 else "Full Moon"
-
 # ============================
 # CALCULATION
 # ============================
 
-if st.button("Calculate"):
-
-    phase = lunar_phase(planets["Sun"], planets["Moon"])
-    st.session_state.phase = phase
+if st.button("Calculate") and lun_degree is not None:
 
     sorted_planets = sorted(planets.items(), key=lambda x: x[1])
-    moon_degree = planets["Moon"]
 
+    # 🔹 Procurar planeta após ponto da lunação
     afeta = None
     for name, degree in sorted_planets:
-        if degree > moon_degree:
+        if degree > lun_degree:
             afeta = name
             break
+
+    # Se não houver, circular
     if not afeta:
         afeta = sorted_planets[0][0]
 
@@ -168,12 +158,7 @@ if st.button("Calculate"):
 # DISPLAY SECTION
 # ============================
 
-if "phase" in st.session_state:
-
-    st.markdown(
-        f"Lunar Phase: <span style='color:#e74c3c'>{st.session_state.phase}</span>",
-        unsafe_allow_html=True
-    )
+if "afeta" in st.session_state:
 
     st.markdown(
         f"Afeta: <span style='color:#e74c3c'>{st.session_state.afeta}</span>",
@@ -283,4 +268,3 @@ if "phase" in st.session_state:
 
 st.markdown("---")
 st.write("Feito por Joana Revez")
-st.write("Qualquer erro por favor contacte: joanarevez@hotmail.com")
