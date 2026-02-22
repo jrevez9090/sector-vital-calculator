@@ -31,7 +31,7 @@ input[type="number"]:focus {
 """, unsafe_allow_html=True)
 
 st.write("Enter prenatal lunation position and zodiac position for each planet.")
-st.write("⚠ Use format like: 12º43' or 12°43'")
+st.write("⚠ Use format like: 12º43'")
 
 st.markdown("---")
 
@@ -56,7 +56,10 @@ def years_to_ymd(years):
     return y, m, d
 
 def parse_position(text):
-    match = re.fullmatch(r"(\d{1,2})[º°](\d{1,2})'", text.strip())
+    if not text:
+        return None, None
+    text = text.strip().replace("°","º").replace("’","'")
+    match = re.fullmatch(r"(\d{1,2})º(\d{1,2})'", text)
     if match:
         deg = int(match.group(1))
         mins = int(match.group(2))
@@ -79,11 +82,9 @@ with col2:
     lun_text = st.text_input("Lunation Position (format: 12º43')")
 
 lun_degree = None
-
-if lun_text:
-    deg, mins = parse_position(lun_text)
-    if deg is not None:
-        lun_degree = sign_to_degree(lun_sign, deg, mins)
+deg, mins = parse_position(lun_text)
+if deg is not None:
+    lun_degree = sign_to_degree(lun_sign, deg, mins)
 
 st.markdown("---")
 
@@ -103,14 +104,12 @@ for planet in planet_names:
     with col2:
         pos_text = st.text_input(f"{planet} Position (format: 12º43')", key=f"{planet}_pos")
 
-    deg = mins = None
-    if pos_text:
-        deg, mins = parse_position(pos_text)
+    deg, mins = parse_position(pos_text)
 
     if deg is not None:
         planets[planet] = sign_to_degree(sign, deg, mins)
     else:
-        planets[planet] = 0
+        planets[planet] = None
 
 # ============================
 # PERIODS
@@ -130,10 +129,15 @@ periods = {
 # CALCULATION
 # ============================
 
-if st.button("Calculate") and lun_degree is not None:
+if st.button("Calculate"):
 
-    if "base_cycle" in st.session_state:
-        del st.session_state.base_cycle
+    if lun_degree is None:
+        st.error("Invalid lunation format.")
+        st.stop()
+
+    if any(v is None for v in planets.values()):
+        st.error("All planetary positions must be filled correctly.")
+        st.stop()
 
     sorted_planets = sorted(planets.items(), key=lambda x: x[1])
 
@@ -243,54 +247,6 @@ if "base_cycle" in st.session_state:
         prev = cum
 
     st.markdown(f"Active Planet: <span class='red'>{active_planet}</span>", unsafe_allow_html=True)
-
-    # Subperiods
-    fixed_days = {}
-    total_days = 0
-
-    for planet,P in periods.items():
-        days = (2*P)+(P/2)+(P/3)
-        fixed_days[planet]=days
-        total_days+=days
-
-    main_duration = periods[active_planet]/4
-
-    start = next(i for i,(n,_,_) in enumerate(active_cycle) if n==active_planet)
-    sub_order = active_cycle[start:] + active_cycle[:start]
-
-    cumulative_sub = 0
-    prev_sub = 0
-    sub_active = None
-
-    st.markdown("### Subperiods")
-
-    for name,_,_ in sub_order:
-        proportion = fixed_days[name]/total_days
-        sub_duration = main_duration*proportion
-        cumulative_sub += sub_duration
-
-        y2,m2,d2 = years_to_ymd(sub_duration)
-
-        st.markdown(
-            f"{name} - <span class='green'>{y2}y {m2}m {d2}d</span> "
-            f"(cumulative: <span class='green'>{round(cumulative_sub,3)}</span>)",
-            unsafe_allow_html=True
-        )
-
-        if sub_active is None and time_in_main <= cumulative_sub:
-            sub_active = name
-            time_inside_sub = time_in_main - prev_sub
-
-        prev_sub = cumulative_sub
-
-    if sub_active:
-        y3,m3,d3 = years_to_ymd(time_inside_sub)
-        st.markdown(f"### Active Subperiod: <span class='red'>{sub_active}</span>", unsafe_allow_html=True)
-        st.markdown(
-            f"Elapsed inside subperiod: "
-            f"<span class='green'>{y3}y {m3}m {d3}d</span>",
-            unsafe_allow_html=True
-        )
 
 st.markdown("---")
 st.write("Made by Joana Revez")
