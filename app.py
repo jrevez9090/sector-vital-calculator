@@ -7,38 +7,24 @@ st.set_page_config(page_title="Sector Vital Calculator", layout="centered")
 st.title("Sector Vital Calculator (Valens Book IV)")
 
 # ============================
-# CUSTOM STYLING (BORDERS)
+# CSS – BORDAS VISUAIS
 # ============================
 
 st.markdown("""
 <style>
-
-/* Selectbox */
-div[data-baseweb="select"] > div {
-    border: 2px solid #555 !important;
-    border-radius: 6px !important;
-}
-
-/* Text input */
-div[data-baseweb="input"] > div {
-    border: 2px solid #555 !important;
-    border-radius: 6px !important;
-}
-
-/* Number input */
+div[data-baseweb="select"] > div,
+div[data-baseweb="input"] > div,
 input[type="number"] {
     border: 2px solid #555 !important;
     border-radius: 6px !important;
 }
 
-/* Focus state */
 div[data-baseweb="select"] > div:focus-within,
 div[data-baseweb="input"] > div:focus-within,
 input[type="number"]:focus {
     border: 2px solid #e74c3c !important;
     outline: none !important;
 }
-
 </style>
 """, unsafe_allow_html=True)
 
@@ -48,7 +34,7 @@ st.write("⚠ Use format exactly like: 12º43'")
 st.markdown("---")
 
 # ============================
-# BASIC STRUCTURE
+# ESTRUTURA
 # ============================
 
 signs = [
@@ -58,8 +44,7 @@ signs = [
 ]
 
 def sign_to_degree(sign, degree, minutes):
-    decimal_degree = degree + (minutes / 60)
-    return signs.index(sign) * 30 + decimal_degree
+    return signs.index(sign) * 30 + degree + (minutes / 60)
 
 def years_to_ymd(years):
     y = int(years)
@@ -69,7 +54,7 @@ def years_to_ymd(years):
     return y, m, d
 
 # ============================
-# PRENATAL LUNATION INPUT
+# LUNAÇÃO
 # ============================
 
 st.markdown("### Prenatal Lunation Position")
@@ -91,15 +76,11 @@ if lun_text:
         mins = int(match.group(2))
         if 0 <= deg <= 29 and 0 <= mins <= 59:
             lun_degree = sign_to_degree(lun_sign, deg, mins)
-        else:
-            st.error("Invalid lunation degree.")
-    else:
-        st.error("Invalid lunation format.")
 
 st.markdown("---")
 
 # ============================
-# PLANET INPUT
+# PLANETAS
 # ============================
 
 planets = {}
@@ -122,15 +103,11 @@ for planet in planet_names:
         if match:
             degree = int(match.group(1))
             minutes = int(match.group(2))
-            if not (0 <= degree <= 29 and 0 <= minutes <= 59):
-                st.error(f"{planet}: invalid degree.")
-        else:
-            st.error(f"{planet}: invalid format.")
 
     planets[planet] = sign_to_degree(sign, degree, minutes)
 
 # ============================
-# PERIODS
+# PERÍODOS
 # ============================
 
 periods = {
@@ -144,22 +121,23 @@ periods = {
 }
 
 # ============================
-# CALCULATION
+# CÁLCULO
 # ============================
 
 if st.button("Calculate") and lun_degree is not None:
 
     sorted_planets = sorted(planets.items(), key=lambda x: x[1])
 
-    # Primeiro afeta
+    # Afeta inicial
     afeta = None
     for name, degree in sorted_planets:
         if degree > lun_degree:
             afeta = name
             break
-
     if not afeta:
         afeta = sorted_planets[0][0]
+
+    st.session_state.afeta = afeta
 
     # Construir ciclo base
     start_index = next(i for i,(n,_) in enumerate(sorted_planets) if n == afeta)
@@ -174,7 +152,6 @@ if st.button("Calculate") and lun_degree is not None:
         base_cycle.append((name,duration,cumulative))
 
     st.session_state.base_cycle = base_cycle
-    st.session_state.afeta = afeta
 
 # ============================
 # DISPLAY
@@ -184,27 +161,31 @@ if "base_cycle" in st.session_state:
 
     st.markdown(f"Afeta inicial: **{st.session_state.afeta}**")
 
-    age = st.number_input("Enter age",0.0,120.0)
+    st.write("### Cycle:")
+
+    for name,duration,cum in st.session_state.base_cycle:
+        y,m,d = years_to_ymd(duration)
+        st.write(f"{name} - {y}y {m}m {d}d (cumulative: {round(cum,3)})")
+
+    age = st.number_input("Enter age to check active planet",0.0,120.0)
 
     cycle_length = st.session_state.base_cycle[-1][2]  # 32.25
 
-    # Número de ciclos completos
     completed_cycles = int(age // cycle_length)
+    age_mod = age % cycle_length
 
-    # Rodar ciclo
-    rotated_cycle = st.session_state.base_cycle.copy()
+    # Rodar ciclo conforme ciclos completos
+    rotated = st.session_state.base_cycle.copy()
     for _ in range(completed_cycles):
-        first = rotated_cycle.pop(0)
-        rotated_cycle.append(first)
+        first = rotated.pop(0)
+        rotated.append(first)
 
-    # Recalcular cumulativos no ciclo rodado
+    # Recalcular cumulativos
     cumulative = 0
     new_cycle = []
-    for name,duration,_ in rotated_cycle:
+    for name,duration,_ in rotated:
         cumulative += duration
         new_cycle.append((name,duration,cumulative))
-
-    age_mod = age % cycle_length
 
     active_planet = None
     prev_cum = 0
@@ -216,15 +197,15 @@ if "base_cycle" in st.session_state:
             break
         prev_cum = cum
 
-    st.markdown(f"Active planet: **{active_planet}**")
+    st.markdown(f"### Active planet at age {age}: **{active_planet}**")
 
     # ============================
-    # SUBPERIODS
+    # SUBPERÍODOS
     # ============================
 
     if active_planet:
 
-        st.markdown("### Subperiods")
+        st.markdown("### Subperiods within active planet")
 
         fixed_days = {}
         total_days = 0
@@ -236,10 +217,8 @@ if "base_cycle" in st.session_state:
 
         main_duration = periods[active_planet]/4
 
-        # subordem começa no planeta ativo
-        sub_order = new_cycle.copy()
-        start = next(i for i,(n,_,_) in enumerate(sub_order) if n==active_planet)
-        sub_order = sub_order[start:] + sub_order[:start]
+        start = next(i for i,(n,_,_) in enumerate(new_cycle) if n==active_planet)
+        sub_order = new_cycle[start:] + new_cycle[:start]
 
         cumulative_sub = 0
         sub_active = None
@@ -248,15 +227,24 @@ if "base_cycle" in st.session_state:
         for name,_,_ in sub_order:
             proportion = fixed_days[name]/total_days
             sub_duration = main_duration*proportion
-            cumulative_sub+=sub_duration
+            cumulative_sub += sub_duration
 
-            if sub_active is None and time_in_main<=cumulative_sub:
-                sub_active=name
-                break
+            y2,m2,d2 = years_to_ymd(sub_duration)
 
-            prev_sub=cumulative_sub
+            st.write(f"{name} - {y2}y {m2}m {d2}d (cumulative: {round(cumulative_sub,3)})")
 
-        st.markdown(f"Active subperiod: **{sub_active}**")
+            if sub_active is None and time_in_main <= cumulative_sub:
+                sub_active = name
+                time_inside_sub = time_in_main - prev_sub
+
+            prev_sub = cumulative_sub
+
+        if sub_active:
+            y3,m3,d3 = years_to_ymd(time_inside_sub)
+
+            st.markdown("### Active Subperiod:")
+            st.markdown(f"**{sub_active}**")
+            st.write(f"Elapsed inside subperiod: {y3}y {m3}m {d3}d")
 
 st.markdown("---")
 st.write("Feito por Joana Revez")
