@@ -239,7 +239,10 @@ if "base_cycle" in st.session_state:
         active_cycle = cycle3_internal
         cycle_number = 3
 
-    st.markdown(f"### Active Cycle: {cycle_number}")
+    st.markdown(
+    f"### Active Cycle: <span class='red'>{cycle_number}</span>",
+    unsafe_allow_html=True
+)
     st.markdown(f"Active Cycle Afeta: <span class='red'>{active_cycle[0][0]}</span>", unsafe_allow_html=True)
 
     prev = 0
