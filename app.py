@@ -171,7 +171,7 @@ if "base_cycle" in st.session_state:
 
     cycle_length = st.session_state.base_cycle[-1][2]
 
-        # ---------- 1st CYCLE ----------
+            # ---------- 1st CYCLE ----------
     st.markdown("## 1st Cycle")
     cycle1 = st.session_state.base_cycle
     for name,duration,cum in cycle1:
@@ -187,12 +187,12 @@ if "base_cycle" in st.session_state:
     cycle2 = cycle1[1:] + cycle1[:1]
     cumulative = 0
     cycle2_display = []
-    offset2 = cycle_length  # 32.25
+    offset2 = cycle_length
 
     for name,duration,_ in cycle2:
         cumulative += duration
         absolute_cum = offset2 + cumulative
-        cycle2_display.append((name,duration,absolute_cum))
+        cycle2_display.append((name,duration,cumulative))  # interno!
         y,m,d = years_to_ymd(duration)
         st.markdown(
             f"{name} - <span class='green'>{y}y {m}m {d}d</span> "
@@ -205,12 +205,12 @@ if "base_cycle" in st.session_state:
     cycle3 = cycle2[1:] + cycle2[:1]
     cumulative = 0
     cycle3_display = []
-    offset3 = cycle_length * 2  # 64.50
+    offset3 = cycle_length * 2
 
     for name,duration,_ in cycle3:
         cumulative += duration
         absolute_cum = offset3 + cumulative
-        cycle3_display.append((name,duration,absolute_cum))
+        cycle3_display.append((name,duration,cumulative))  # interno!
         y,m,d = years_to_ymd(duration)
         st.markdown(
             f"{name} - <span class='green'>{y}y {m}m {d}d</span> "
