@@ -170,59 +170,48 @@ if st.button("Calculate"):
 
     st.session_state.base_cycle = base_cycle
 
-# ============================
-# DISPLAY
-# ============================
+# ---------- DISPLAY CYCLES SIDE BY SIDE ----------
 
-if "base_cycle" in st.session_state:
+col1, col2, col3 = st.columns(3)
 
-    st.markdown(f"### Initial Afeta: <span class='red'>{st.session_state.afeta}</span>", unsafe_allow_html=True)
-
-    cycle1 = st.session_state.base_cycle
-    cycle_length = cycle1[-1][2]
-
-    # 1st Cycle
-    st.markdown("## 1st Cycle")
+# 1st Cycle
+with col1:
+    st.markdown("### 1st Cycle")
     for name,duration,cum in cycle1:
         y,m,d = years_to_ymd(duration)
         st.markdown(
-            f"{name} - <span class='green'>{y}y {m}m {d}d</span> "
+            f"{name}<br>"
+            f"<span class='green'>{y}y {m}m {d}d</span><br>"
             f"(cumulative: <span class='green'>{round(cum,3)}</span>)",
             unsafe_allow_html=True
         )
 
-    # 2nd Cycle
-    st.markdown("## 2nd Cycle")
-    cycle2 = cycle1[1:] + cycle1[:1]
-    cumulative = 0
-    cycle2_internal = []
-    for name,duration,_ in cycle2:
-        cumulative += duration
-        cycle2_internal.append((name,duration,cumulative))
-        absolute = cycle_length + cumulative
+# 2nd Cycle
+with col2:
+    st.markdown("### 2nd Cycle")
+    for name,duration,cum in cycle2_internal:
+        absolute = cycle_length + cum
         y,m,d = years_to_ymd(duration)
         st.markdown(
-            f"{name} - <span class='green'>{y}y {m}m {d}d</span> "
+            f"{name}<br>"
+            f"<span class='green'>{y}y {m}m {d}d</span><br>"
             f"(cumulative: <span class='green'>{round(absolute,3)}</span>)",
             unsafe_allow_html=True
         )
 
-    # 3rd Cycle
-    st.markdown("## 3rd Cycle")
-    cycle3 = cycle2[1:] + cycle2[:1]
-    cumulative = 0
-    cycle3_internal = []
-    for name,duration,_ in cycle3:
-        cumulative += duration
-        cycle3_internal.append((name,duration,cumulative))
-        absolute = (cycle_length * 2) + cumulative
+# 3rd Cycle
+with col3:
+    st.markdown("### 3rd Cycle")
+    for name,duration,cum in cycle3_internal:
+        absolute = (cycle_length * 2) + cum
         y,m,d = years_to_ymd(duration)
         st.markdown(
-            f"{name} - <span class='green'>{y}y {m}m {d}d</span> "
+            f"{name}<br>"
+            f"<span class='green'>{y}y {m}m {d}d</span><br>"
             f"(cumulative: <span class='green'>{round(absolute,3)}</span>)",
             unsafe_allow_html=True
         )
-
+        
     # Active calculation
     age = st.number_input("Enter age to check active planet",0.0,120.0)
 
