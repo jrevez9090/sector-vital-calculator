@@ -130,12 +130,8 @@ periods = {
 
 if st.button("Calculate"):
 
-    if lun_degree is None:
-        st.error("Invalid lunation format.")
-        st.stop()
-
-    if any(v is None for v in planets.values()):
-        st.error("All planetary positions must be filled correctly.")
+    if lun_degree is None or any(v is None for v in planets.values()):
+        st.error("Please fill all fields correctly.")
         st.stop()
 
     sorted_planets = sorted(planets.items(), key=lambda x: x[1])
@@ -153,7 +149,6 @@ if st.button("Calculate"):
 
     cycle1 = []
     cumulative = 0
-
     for name,_ in ordered:
         duration = periods[name] / 4
         cumulative += duration
@@ -171,11 +166,6 @@ if "cycle1" in st.session_state:
     cycle1 = st.session_state.cycle1
     cycle_length = cycle1[-1][2]
 
-    # Build 2nd and 3rd cycles
-    cycle2 = cycle1[1:] + cycle1[:1]
-    cycle3 = cycle2[1:] + cycle2[:1]
-
-    # Convert to internal cumulative
     def rebuild_cycle(cycle):
         cumulative = 0
         rebuilt = []
@@ -184,48 +174,101 @@ if "cycle1" in st.session_state:
             rebuilt.append((name,duration,cumulative))
         return rebuilt
 
-    cycle2_internal = rebuild_cycle(cycle2)
-    cycle3_internal = rebuild_cycle(cycle3)
+    cycle2_internal = rebuild_cycle(cycle1[1:] + cycle1[:1])
+    cycle3_internal = rebuild_cycle(cycle2_internal[1:] + cycle2_internal[:1])
 
     st.markdown(f"### Initial Afeta: <span class='red'>{st.session_state.afeta}</span>", unsafe_allow_html=True)
 
-    # SIDE BY SIDE DISPLAY
     colA, colB, colC = st.columns(3)
 
     with colA:
         st.markdown("### 1st Cycle")
         for name,duration,cum in cycle1:
             y,m,d = years_to_ymd(duration)
-            st.markdown(
-                f"{name}<br>"
-                f"<span class='green'>{y}y {m}m {d}d</span><br>"
-                f"(cumulative: <span class='green'>{round(cum,3)}</span>)",
-                unsafe_allow_html=True
-            )
+            st.markdown(f"{name}<br><span class='green'>{y}y {m}m {d}d</span><br>(cumulative: <span class='green'>{round(cum,3)}</span>)", unsafe_allow_html=True)
 
     with colB:
         st.markdown("### 2nd Cycle")
         for name,duration,cum in cycle2_internal:
             absolute = cycle_length + cum
             y,m,d = years_to_ymd(duration)
-            st.markdown(
-                f"{name}<br>"
-                f"<span class='green'>{y}y {m}m {d}d</span><br>"
-                f"(cumulative: <span class='green'>{round(absolute,3)}</span>)",
-                unsafe_allow_html=True
-            )
+            st.markdown(f"{name}<br><span class='green'>{y}y {m}m {d}d</span><br>(cumulative: <span class='green'>{round(absolute,3)}</span>)", unsafe_allow_html=True)
 
     with colC:
         st.markdown("### 3rd Cycle")
         for name,duration,cum in cycle3_internal:
-            absolute = (cycle_length * 2) + cum
+            absolute = (cycle_length*2) + cum
             y,m,d = years_to_ymd(duration)
-            st.markdown(
-                f"{name}<br>"
-                f"<span class='green'>{y}y {m}m {d}d</span><br>"
-                f"(cumulative: <span class='green'>{round(absolute,3)}</span>)",
-                unsafe_allow_html=True
-            )
+            st.markdown(f"{name}<br><span class='green'>{y}y {m}m {d}d</span><br>(cumulative: <span class='green'>{round(absolute,3)}</span>)", unsafe_allow_html=True)
+
+    # ACTIVE CALCULATION
+    age = st.number_input("Enter age to check active planet",0.0,120.0)
+
+    completed_cycles = int(age // cycle_length)
+    age_mod = age % cycle_length
+
+    if completed_cycles == 0:
+        active_cycle = cycle1
+        cycle_number = 1
+    elif completed_cycles == 1:
+        active_cycle = cycle2_internal
+        cycle_number = 2
+    else:
+        active_cycle = cycle3_internal
+        cycle_number = 3
+
+    st.markdown(f"### Active Cycle: <span class='red'>{cycle_number}</span>", unsafe_allow_html=True)
+    st.markdown(f"Active Cycle Afeta: <span class='red'>{active_cycle[0][0]}</span>", unsafe_allow_html=True)
+
+    prev = 0
+    active_planet = None
+
+    for name,duration,cum in active_cycle:
+        if age_mod <= cum:
+            active_planet = name
+            time_in_main = age_mod - prev
+            break
+        prev = cum
+
+    st.markdown(f"Active Planet: <span class='red'>{active_planet}</span>", unsafe_allow_html=True)
+
+    # SUBPERIODS
+    fixed_days = {}
+    total_days = 0
+    for planet,P in periods.items():
+        days = (2*P)+(P/2)+(P/3)
+        fixed_days[planet]=days
+        total_days+=days
+
+    main_duration = periods[active_planet]/4
+    start = next(i for i,(n,_,_) in enumerate(active_cycle) if n==active_planet)
+    sub_order = active_cycle[start:] + active_cycle[:start]
+
+    cumulative_sub = 0
+    prev_sub = 0
+    sub_active = None
+
+    st.markdown("### Subperiods")
+
+    for name,_,_ in sub_order:
+        proportion = fixed_days[name]/total_days
+        sub_duration = main_duration*proportion
+        cumulative_sub += sub_duration
+
+        y2,m2,d2 = years_to_ymd(sub_duration)
+
+        st.markdown(f"{name} - <span class='green'>{y2}y {m2}m {d2}d</span> (cumulative: <span class='green'>{round(cumulative_sub,3)}</span>)", unsafe_allow_html=True)
+
+        if sub_active is None and time_in_main <= cumulative_sub:
+            sub_active = name
+            time_inside_sub = time_in_main - prev_sub
+
+        prev_sub = cumulative_sub
+
+    if sub_active:
+        y3,m3,d3 = years_to_ymd(time_inside_sub)
+        st.markdown(f"### Active Subperiod: <span class='red'>{sub_active}</span>", unsafe_allow_html=True)
+        st.markdown(f"Elapsed inside subperiod: <span class='green'>{y3}y {m3}m {d3}d</span>", unsafe_allow_html=True)
 
 st.markdown("---")
 st.write("Made by Joana Revez")
