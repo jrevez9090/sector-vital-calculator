@@ -58,13 +58,19 @@ def years_to_ymd(years):
 def parse_position(text):
     if not text:
         return None, None
+
+    # Normalizar símbolos
     text = text.strip().replace("°","º").replace("’","'")
-    match = re.fullmatch(r"(\d{1,2})º(\d{1,2})'", text)
+
+    match = re.fullmatch(r"\s*(\d{1,2})º\s*(\d{1,2})'\s*", text)
+
     if match:
         deg = int(match.group(1))
         mins = int(match.group(2))
+
         if 0 <= deg <= 29 and 0 <= mins <= 59:
             return deg, mins
+
     return None, None
 
 # ============================
