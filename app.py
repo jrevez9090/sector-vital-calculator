@@ -128,7 +128,6 @@ if st.button("Calculate") and lun_degree is not None:
 
     sorted_planets = sorted(planets.items(), key=lambda x: x[1])
 
-    # Afeta inicial
     afeta = None
     for name, degree in sorted_planets:
         if degree > lun_degree:
@@ -139,7 +138,6 @@ if st.button("Calculate") and lun_degree is not None:
 
     st.session_state.afeta = afeta
 
-    # Construir ciclo base
     start_index = next(i for i,(n,_) in enumerate(sorted_planets) if n == afeta)
     ordered = sorted_planets[start_index:] + sorted_planets[:start_index]
 
@@ -159,92 +157,104 @@ if st.button("Calculate") and lun_degree is not None:
 
 if "base_cycle" in st.session_state:
 
-    st.markdown(f"Afeta inicial: **{st.session_state.afeta}**")
+    cycle_length = st.session_state.base_cycle[-1][2]  # 32.25
 
-    st.write("### Cycle:")
-
-    for name,duration,cum in st.session_state.base_cycle:
+    # ---------- MOSTRAR 3 CICLOS ----------
+    st.markdown("## 1º CICLO")
+    cycle1 = st.session_state.base_cycle
+    for name,duration,cum in cycle1:
         y,m,d = years_to_ymd(duration)
         st.write(f"{name} - {y}y {m}m {d}d (cumulative: {round(cum,3)})")
 
-    age = st.number_input("Enter age to check active planet",0.0,120.0)
+    st.markdown("## 2º CICLO")
+    cycle2 = cycle1[1:] + cycle1[:1]
+    cumulative = 0
+    cycle2_display = []
+    for name,duration,_ in cycle2:
+        cumulative += duration
+        cycle2_display.append((name,duration,cumulative))
+        y,m,d = years_to_ymd(duration)
+        st.write(f"{name} - {y}y {m}m {d}d (cumulative: {round(cumulative,3)})")
 
-    cycle_length = st.session_state.base_cycle[-1][2]  # 32.25
+    st.markdown("## 3º CICLO")
+    cycle3 = cycle2[1:] + cycle2[:1]
+    cumulative = 0
+    cycle3_display = []
+    for name,duration,_ in cycle3:
+        cumulative += duration
+        cycle3_display.append((name,duration,cumulative))
+        y,m,d = years_to_ymd(duration)
+        st.write(f"{name} - {y}y {m}m {d}d (cumulative: {round(cumulative,3)})")
+
+    # ---------- PLANETA ATIVO ----------
+    age = st.number_input("Enter age to check active planet",0.0,120.0)
 
     completed_cycles = int(age // cycle_length)
     age_mod = age % cycle_length
 
-    # Rodar ciclo conforme ciclos completos
-    rotated = st.session_state.base_cycle.copy()
-    for _ in range(completed_cycles):
-        first = rotated.pop(0)
-        rotated.append(first)
+    if completed_cycles == 0:
+        active_cycle = cycle1
+        cycle_number = 1
+    elif completed_cycles == 1:
+        active_cycle = cycle2_display
+        cycle_number = 2
+    else:
+        active_cycle = cycle3_display
+        cycle_number = 3
 
-    # Recalcular cumulativos
-    cumulative = 0
-    new_cycle = []
-    for name,duration,_ in rotated:
-        cumulative += duration
-        new_cycle.append((name,duration,cumulative))
+    st.markdown(f"### Ciclo Atual: {cycle_number}º")
+    st.markdown(f"Afeta ativo do ciclo: **{active_cycle[0][0]}**")
 
     active_planet = None
     prev_cum = 0
 
-    for name,duration,cum in new_cycle:
+    for name,duration,cum in active_cycle:
         if age_mod <= cum:
             active_planet = name
             time_in_main = age_mod - prev_cum
             break
         prev_cum = cum
 
-    st.markdown(f"### Active planet at age {age}: **{active_planet}**")
+    st.markdown(f"### Planeta ativo: **{active_planet}**")
 
-    # ============================
-    # SUBPERÍODOS
-    # ============================
+    # ---------- SUBPERÍODOS ----------
+    fixed_days = {}
+    total_days = 0
 
-    if active_planet:
+    for planet,P in periods.items():
+        days = (2*P)+(P/2)+(P/3)
+        fixed_days[planet]=days
+        total_days+=days
 
-        st.markdown("### Subperiods within active planet")
+    main_duration = periods[active_planet]/4
 
-        fixed_days = {}
-        total_days = 0
+    start = next(i for i,(n,_,_) in enumerate(active_cycle) if n==active_planet)
+    sub_order = active_cycle[start:] + active_cycle[:start]
 
-        for planet,P in periods.items():
-            days = (2*P)+(P/2)+(P/3)
-            fixed_days[planet]=days
-            total_days+=days
+    cumulative_sub = 0
+    sub_active = None
+    prev_sub = 0
 
-        main_duration = periods[active_planet]/4
+    st.markdown("### Subperíodos")
 
-        start = next(i for i,(n,_,_) in enumerate(new_cycle) if n==active_planet)
-        sub_order = new_cycle[start:] + new_cycle[:start]
+    for name,_,_ in sub_order:
+        proportion = fixed_days[name]/total_days
+        sub_duration = main_duration*proportion
+        cumulative_sub += sub_duration
 
-        cumulative_sub = 0
-        sub_active = None
-        prev_sub = 0
+        y2,m2,d2 = years_to_ymd(sub_duration)
+        st.write(f"{name} - {y2}y {m2}m {d2}d (cumulative: {round(cumulative_sub,3)})")
 
-        for name,_,_ in sub_order:
-            proportion = fixed_days[name]/total_days
-            sub_duration = main_duration*proportion
-            cumulative_sub += sub_duration
+        if sub_active is None and time_in_main <= cumulative_sub:
+            sub_active = name
+            time_inside_sub = time_in_main - prev_sub
 
-            y2,m2,d2 = years_to_ymd(sub_duration)
+        prev_sub = cumulative_sub
 
-            st.write(f"{name} - {y2}y {m2}m {d2}d (cumulative: {round(cumulative_sub,3)})")
-
-            if sub_active is None and time_in_main <= cumulative_sub:
-                sub_active = name
-                time_inside_sub = time_in_main - prev_sub
-
-            prev_sub = cumulative_sub
-
-        if sub_active:
-            y3,m3,d3 = years_to_ymd(time_inside_sub)
-
-            st.markdown("### Active Subperiod:")
-            st.markdown(f"**{sub_active}**")
-            st.write(f"Elapsed inside subperiod: {y3}y {m3}m {d3}d")
+    if sub_active:
+        y3,m3,d3 = years_to_ymd(time_inside_sub)
+        st.markdown(f"### Subperíodo ativo: **{sub_active}**")
+        st.write(f"Elapsed inside subperiod: {y3}y {m3}m {d3}d")
 
 st.markdown("---")
 st.write("Feito por Joana Revez")
